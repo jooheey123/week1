@@ -17,20 +17,21 @@ def prompt_compliance_evaluator(run: Run, example: Example) -> dict:
     outputs = example.outputs['output']
 
     # Extract system prompt
-    system_prompt = next((msg['data']['content'] for msg in inputs if msg['type'] == 'system'), "")
+    system_prompt = next((msg['content'] for msg in inputs if msg['role'] == 'system'), "")
 
     # Extract message history
     message_history = []
     for msg in inputs:
+        #print(msg)
         if msg['type'] in ['human', 'ai']:
             message_history.append({
                 "role": "user" if msg['type'] == 'human' else "assistant",
-                "content": msg['data']['content']
+                "content": msg['content']
             })
 
     # Extract latest user message and model output
     latest_message = message_history[-1]['content'] if message_history else ""
-    model_output = outputs['data']['content']
+    model_output = outputs['content']
 
     evaluation_prompt = f"""
     System Prompt: {system_prompt}
@@ -66,7 +67,7 @@ def prompt_compliance_evaluator(run: Run, example: Example) -> dict:
         result = json.loads(response.choices[0].message.content)
         return {
             "key": "prompt_compliance",
-            "score": result["score"] / 10,  # Normalize to 0-1 range
+            "score": int(result["score"]) / 10,  # Normalize to 0-1 range
             "reason": result["explanation"]
         }
     except json.JSONDecodeError:
